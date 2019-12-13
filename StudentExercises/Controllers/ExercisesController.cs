@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace StudentExercises.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("{controller}/{action}")]
     [ApiController]
     public class ExercisesController : Controller
     {
@@ -29,7 +29,7 @@ namespace StudentExercises.Controllers
         }
 
         [HttpGet] //Get all exercises
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAllExercise()
         {
             using (SqlConnection conn = Connection)
             {
