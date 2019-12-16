@@ -28,7 +28,7 @@ namespace StudentExercises.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllInstructors()
+        public async Task<IActionResult> GetAllInstructors(string? search)
         {
             using (SqlConnection conn = Connection)
             {
@@ -41,6 +41,9 @@ namespace StudentExercises.Controllers
                         "FROM instructors " +
                         "LEFT JOIN cohorts as c ON instructors.cohort_id = c.id " +
                         "LEFT JOIN students as s ON c.id = s.cohort_id ";
+                    if (search != null)
+                        cmd.CommandText += $" WHERE instructors.first_name LIKE '%{search}%' OR instructors.last_name LIKE '%{search}%' OR instructors.slack_handle LIKE '%{search}%'";
+
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     List<Instructor> instructors = new List<Instructor>();

@@ -28,19 +28,22 @@ namespace StudentExercises.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllCohorts()
+        public async Task<IActionResult> GetAllCohorts(string? search)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT cohorts.id as CohortID, cohorts.name as CohortName, " +
+                    cmd.CommandText = "SELECT cohorts.id as CohortID, cohorts.name as CohortName," +
                         "i.id as InstructorID, i.first_name as InstructorFirst, i.last_name as InstructorLast, i.slack_handle as InstructorSlack, i.cohort_id as InstructorCohortID, " +
                         "s.id as StudentID, s.first_name as StudentFirst, s.last_name as StudentLast, s.slack_handle as StudentSlack, s.cohort_id as StudentCohortID " +
                         "FROM cohorts " +
                         "LEFT JOIN students as s ON cohorts.id = s.cohort_id " +
                         "LEFT JOIN instructors as i ON cohorts.id = i.cohort_id ";
+                    if (search != null)
+                        cmd.CommandText += $"WHERE cohorts.name LIKE '%{search}%'";
+
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     List<Cohort> cohorts = new List<Cohort>();
