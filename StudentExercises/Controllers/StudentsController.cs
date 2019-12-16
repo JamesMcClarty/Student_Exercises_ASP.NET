@@ -28,7 +28,7 @@ namespace StudentExercises.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllStudents()
+        public async Task<IActionResult> GetAllStudents(string? include, string? search)
         {
             using (SqlConnection conn = Connection)
             {
@@ -37,14 +37,23 @@ namespace StudentExercises.Controllers
                 {
                     cmd.CommandText = "SELECT students.id as StudentID, students.first_name as StudentFirst, students.last_name as StudentLast, students.slack_handle as StudentSlack, students.cohort_id as StudentCohortID, " +
                         "c.id as CohortID, c.name as CohortName, " +
-                        "i.id as InstructorID, i.first_name as InstructorFirst, i.last_name as InstructorLast, i.slack_handle as InstructorSlack, i.specialty as InstructorSpecialty, i.cohort_id as InstructorCohortID, " +
-                        "e.id as ExerciseID, e.name as ExerciseName, e.language as ExerciseLanguage, " +
-                        "se.student_id as StudentExerciseStudentID, se.exercise_id as StudentExerciseExerciseID " +
-                        "FROM students " +
-                        "LEFT JOIN cohorts as c ON students.cohort_id = c.id " +
-                        "LEFT JOIN instructors as i ON c.id = i.id " +
-                        "LEFT JOIN studentexercises as se ON se.student_id = students.id " +
-                        "INNER JOIN exercises as e ON se.exercise_id = e.id;";
+                        "i.id as InstructorID, i.first_name as InstructorFirst, i.last_name as InstructorLast, i.slack_handle as InstructorSlack, i.specialty as InstructorSpecialty, i.cohort_id as InstructorCohortID";
+                    if (include == "exercise")
+                    {
+                        cmd.CommandText += ", e.id as ExerciseID, e.name as ExerciseName, e.language as ExerciseLanguage, " +
+                        "se.student_id as StudentExerciseStudentID, se.exercise_id as StudentExerciseExerciseID";
+                    }
+                    cmd.CommandText += " FROM students " +
+                    "LEFT JOIN cohorts as c ON students.cohort_id = c.id " +
+                    "LEFT JOIN instructors as i ON c.id = i.id";
+                    if (include == "exercise")
+                    {
+                        cmd.CommandText += " LEFT JOIN studentexercises as se ON se.student_id = students.id " +
+                        "INNER JOIN exercises as e ON se.exercise_id = e.id";
+                    }
+                    if (search != null)
+                        cmd.CommandText += $" WHERE students.first_name LIKE '%{search}%' OR students.last_name LIKE '%{search}%' OR students.slack_handle LIKE '%{search}%'";
+
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<Student> students = new List<Student>();
                     while (reader.Read())
@@ -76,10 +85,12 @@ namespace StudentExercises.Controllers
                             students.Add(newStudent);
                         }
                         //Check each student's cohort if cohort matches student's cohort id
-                        foreach(Student stud in students)
+                        foreach (Student stud in students)
                         {
-                            if(stud.Cohort.Id == reader.GetInt32(reader.GetOrdinal("StudentCohortId")) && stud.Cohort.Students.FirstOrDefault(c => c.Id == currentStudentID) == null){
-                                stud.Cohort.Students.Add(new Student {
+                            if (stud.Cohort.Id == reader.GetInt32(reader.GetOrdinal("StudentCohortId")) && stud.Cohort.Students.FirstOrDefault(c => c.Id == currentStudentID) == null)
+                            {
+                                stud.Cohort.Students.Add(new Student
+                                {
                                     Id = currentStudentID,
                                     FirstName = reader.GetString(reader.GetOrdinal("StudentFirst")),
                                     LastName = reader.GetString(reader.GetOrdinal("StudentLast")),
@@ -93,8 +104,10 @@ namespace StudentExercises.Controllers
 
                         foreach (Student stud in students)
                         {
-                            if(stud.Cohort.Id == reader.GetInt32(reader.GetOrdinal("InstructorCohortID")) && stud.Cohort.Instructors.FirstOrDefault(c => c.Id == currentInstructorId) == null){
-                                stud.Cohort.Instructors.Add(new Instructor {
+                            if (stud.Cohort.Id == reader.GetInt32(reader.GetOrdinal("InstructorCohortID")) && stud.Cohort.Instructors.FirstOrDefault(c => c.Id == currentInstructorId) == null)
+                            {
+                                stud.Cohort.Instructors.Add(new Instructor
+                                {
                                     Id = currentInstructorId,
                                     FirstName = reader.GetString(reader.GetOrdinal("InstructorFirst")),
                                     LastName = reader.GetString(reader.GetOrdinal("InstructorLast")),
@@ -103,21 +116,24 @@ namespace StudentExercises.Controllers
                             }
                         }
 
-                        //Check each student's exercise list if exercise matches ids.
+                        //Check each student's exercise list if exercise matches ids IF includes equals Exercies.
 
-                        int currentExerciseID = reader.GetInt32(reader.GetOrdinal("ExerciseID"));
-
-                        foreach (Student stud in students)
+                        if (include == "exercise")
                         {
-                            if (stud.Exercises.FirstOrDefault(e => e.Id == currentExerciseID) == null && currentStudentID == reader.GetInt32(reader.GetOrdinal("StudentExerciseStudentID")))
+                            int currentExerciseID = reader.GetInt32(reader.GetOrdinal("ExerciseID"));
+
+                            foreach (Student stud in students)
                             {
-                                stud.Exercises.Add(new Exercise
+                                if (stud.Exercises.FirstOrDefault(e => e.Id == currentExerciseID) == null && currentStudentID == reader.GetInt32(reader.GetOrdinal("StudentExerciseStudentID")))
                                 {
-                                    Id = reader.GetInt32(reader.GetOrdinal("ExerciseID")),
-                                    Name = reader.GetString(reader.GetOrdinal("ExerciseName")),
-                                    Language = reader.GetString(reader.GetOrdinal("ExerciseLanguage")),
+                                    stud.Exercises.Add(new Exercise
+                                    {
+                                        Id = reader.GetInt32(reader.GetOrdinal("ExerciseID")),
+                                        Name = reader.GetString(reader.GetOrdinal("ExerciseName")),
+                                        Language = reader.GetString(reader.GetOrdinal("ExerciseLanguage")),
+                                    }
+                                    );
                                 }
-                                );
                             }
                         }
                     }

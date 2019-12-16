@@ -5,6 +5,7 @@ using StudentExercises.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace StudentExercises.Controllers
@@ -29,27 +30,69 @@ namespace StudentExercises.Controllers
         }
 
         [HttpGet] //Get all exercises
-        public async Task<IActionResult> GetAllExercise()
+        public async Task<IActionResult> GetAllExercises(string? include, string? search)
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT id, name, language FROM exercises";
+                    cmd.CommandText = "SELECT exercises.id as ExerciseID, exercises.name as ExerciseName, exercises.language as ExerciseLanguage";
+                    if (include == "students")
+                    {
+                        cmd.CommandText += ", se.student_id as StudentExerciseStudentID, se.exercise_id as StudentExerciseExerciseID, " +
+                        "s.id as StudentID, s.first_name as StudentFirst, s.last_name as StudentLast, s.slack_handle as StudentSlack, s.cohort_id as StudentCohortID";
+                    }
+                    cmd.CommandText += " FROM exercises";
+                    if (include == "students")
+                    {
+                        cmd.CommandText += " LEFT JOIN studentexercises as se ON exercises.id = se.exercise_id" +
+                          " INNER JOIN students as s ON se.student_id = s.id";
+                    }
+                    if (search != null)
+                    {
+                        cmd.CommandText += $" WHERE exercises.name LIKE '%{search}%' OR exercises.language LIKE '%{search}%'";
+                    }
+
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<Exercise> exercises = new List<Exercise>();
 
                     while (reader.Read())
                     {
-                        Exercise newExercise = new Exercise
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Title")),
-                            Language = reader.GetString(reader.GetOrdinal("BeanType"))
-                        };
+                        //Check if exercise is in
+                        int currentExerciseID = reader.GetInt32(reader.GetOrdinal("ExerciseID"));
+                        Exercise newExercise = exercises.FirstOrDefault(e => e.Id == currentExerciseID);
 
-                        exercises.Add(newExercise);
+                        if (newExercise == null)
+                        {
+                            newExercise = new Exercise
+                            {
+                                Id = currentExerciseID,
+                                Name = reader.GetString(reader.GetOrdinal("ExerciseName")),
+                                Language = reader.GetString(reader.GetOrdinal("ExerciseLanguage")),
+                                Students = new List<Student>()
+                            };
+                            exercises.Add(newExercise);
+                        }
+
+                        if (include == "students")
+                        {
+                            //Add new student in appropriate exercise list IF Include = "students"
+                            int currentStudentID = reader.GetInt32(reader.GetOrdinal("StudentID"));
+                            foreach (Exercise exer in exercises)
+                            {
+                                if (exer.Id == reader.GetInt32(reader.GetOrdinal("StudentExerciseExerciseID")) && exer.Students.FirstOrDefault(s => s.Id == currentStudentID) == null)
+                                {
+                                    exer.Students.Add(new Student
+                                    {
+                                        Id = currentStudentID,
+                                        FirstName = reader.GetString(reader.GetOrdinal("StudentFirst")),
+                                        LastName = reader.GetString(reader.GetOrdinal("StudentLast")),
+                                        SlackHandle = reader.GetString(reader.GetOrdinal("StudentSlack")),
+                                    });
+                                }
+                            }
+                        }
                     }
                     reader.Close();
 
