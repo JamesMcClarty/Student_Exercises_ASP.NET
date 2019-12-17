@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace StudentExercises.Controllers
 {
-    [Route("{controller}/{action}")]
+    [Route("api/{controller}")]
     [ApiController]
     public class CohortsController : Controller
     {
@@ -28,7 +28,7 @@ namespace StudentExercises.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllCohorts(string? search)
+        public async Task<IActionResult> GetAllCohorts([FromQuery]string? search)
         {
             using (SqlConnection conn = Connection)
             {

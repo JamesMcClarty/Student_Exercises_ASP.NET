@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace StudentExercises.Controllers
 {
-    [Route("{controller}/{action}")]
+    [Route("api/{controller}")]
     [ApiController]
     public class ExercisesController : Controller
     {
@@ -30,7 +30,7 @@ namespace StudentExercises.Controllers
         }
 
         [HttpGet] //Get all exercises
-        public async Task<IActionResult> GetAllExercises(string? include, string? search)
+        public async Task<IActionResult> GetAllExercises([FromQuery]string? include, [FromQuery]string? search)
         {
             using (SqlConnection conn = Connection)
             {
@@ -102,7 +102,7 @@ namespace StudentExercises.Controllers
         }
 
         [HttpGet("{id})", Name = "GetExercise")]
-        public async Task<IActionResult> GetOne(int _id)
+        public async Task<IActionResult> GetOneExercise([FromRoute]int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -110,7 +110,7 @@ namespace StudentExercises.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = "SELECT id, name, language FROM exercises WHERE id = @id";
-                    cmd.Parameters.Add(new SqlParameter("@id", _id));
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     Exercise exercise = new Exercise();
@@ -138,7 +138,7 @@ namespace StudentExercises.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] Exercise exercise)
+        public async Task<IActionResult> PostExercise([FromBody] Exercise exercise)
         {
             using (SqlConnection conn = Connection)
             {
@@ -159,7 +159,7 @@ namespace StudentExercises.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put([FromRoute] int id, [FromBody] Exercise exercise)
+        public async Task<IActionResult> PutExercise([FromRoute] int id, [FromBody] Exercise exercise)
         {
             try
             {
@@ -199,7 +199,7 @@ namespace StudentExercises.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete([FromRoute] int id)
+        public async Task<IActionResult> DeleteExercise([FromRoute] int id)
         {
             try
             {

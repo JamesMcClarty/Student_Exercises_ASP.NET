@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace StudentExercises.Controllers
 {
-    [Route("{controller}/{action}")]
+    [Route("api/{controller}")]
     [ApiController]
     public class InstructorsController : Controller
     {
@@ -28,7 +28,7 @@ namespace StudentExercises.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllInstructors(string? search)
+        public async Task<IActionResult> GetAllInstructors([FromQuery]string? search)
         {
             using (SqlConnection conn = Connection)
             {
@@ -114,7 +114,7 @@ namespace StudentExercises.Controllers
         }
 
         [HttpGet("{id}", Name = "GettingInstructor")]
-        public async Task<IActionResult> GetOne([FromRoute] int id)
+        public async Task<IActionResult> GetOneInstructor([FromRoute] int id)
         {
             using (SqlConnection conn = Connection)
             {
