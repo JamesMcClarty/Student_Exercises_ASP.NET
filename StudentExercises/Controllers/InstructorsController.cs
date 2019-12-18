@@ -42,7 +42,10 @@ namespace StudentExercises.Controllers
                         "LEFT JOIN cohorts as c ON instructors.cohort_id = c.id " +
                         "LEFT JOIN students as s ON c.id = s.cohort_id ";
                     if (search != null)
-                        cmd.CommandText += $" WHERE instructors.first_name LIKE '%{search}%' OR instructors.last_name LIKE '%{search}%' OR instructors.slack_handle LIKE '%{search}%'";
+                    {
+                        cmd.CommandText += " WHERE instructors.first_name LIKE @search OR instructors.last_name LIKE @search OR instructors.slack_handle LIKE @search";
+                        cmd.Parameters.Add(new SqlParameter("@search", "%" + search + "%"));
+                    }
 
                     SqlDataReader reader = cmd.ExecuteReader();
 

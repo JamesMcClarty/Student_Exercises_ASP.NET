@@ -51,7 +51,8 @@ namespace StudentExercises.Controllers
                     }
                     if (search != null)
                     {
-                        cmd.CommandText += $" WHERE exercises.name LIKE '%{search}%' OR exercises.language LIKE '%{search}%'";
+                        cmd.CommandText += " WHERE exercises.name LIKE @search OR exercises.language LIKE @search";
+                        cmd.Parameters.Add(new SqlParameter("@search", "%" + search + "%"));
                     }
 
                     SqlDataReader reader = cmd.ExecuteReader();
@@ -119,9 +120,9 @@ namespace StudentExercises.Controllers
                     {
                         exercise = new Exercise
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Title")),
-                            Language = reader.GetString(reader.GetOrdinal("BeanType"))
+                            Id = reader.GetInt32(reader.GetOrdinal("id")),
+                            Name = reader.GetString(reader.GetOrdinal("name")),
+                            Language = reader.GetString(reader.GetOrdinal("language"))
                         };
                     }
 
