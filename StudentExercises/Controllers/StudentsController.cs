@@ -52,7 +52,10 @@ namespace StudentExercises.Controllers
                         "INNER JOIN exercises as e ON se.exercise_id = e.id";
                     }
                     if (search != null)
-                        cmd.CommandText += $" WHERE students.first_name LIKE '%{search}%' OR students.last_name LIKE '%{search}%' OR students.slack_handle LIKE '%{search}%'";
+                    {
+                        cmd.CommandText += " WHERE students.first_name LIKE @search OR students.last_name LIKE @search OR students.slack_handle LIKE @search";
+                        cmd.Parameters.Add(new SqlParameter("@search", "%" + search + "%"));
+                    }
 
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<Student> students = new List<Student>();

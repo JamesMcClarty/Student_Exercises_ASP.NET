@@ -27,3 +27,4 @@ C:\Users\James\workspace\csharp\webapi\studentexercises\StudentExercises\obj\Deb
 C:\Users\James\workspace\csharp\webapi\studentexercises\StudentExercises\obj\Debug\netcoreapp3.1\StudentExercises.csproj.CopyComplete
 C:\Users\James\workspace\csharp\webapi\studentexercises\StudentExercises\obj\Debug\netcoreapp3.1\StudentExercises.dll
 C:\Users\James\workspace\csharp\webapi\studentexercises\StudentExercises\obj\Debug\netcoreapp3.1\StudentExercises.pdb
+C:\Users\James\workspace\csharp\webapi\studentexercises\StudentExercises\obj\Debug\netcoreapp3.1\StudentExercises.csprojAssemblyReference.cache

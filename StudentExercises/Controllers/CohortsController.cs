@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace StudentExercises.Controllers
 {
@@ -40,9 +41,12 @@ namespace StudentExercises.Controllers
                         "s.id as StudentID, s.first_name as StudentFirst, s.last_name as StudentLast, s.slack_handle as StudentSlack, s.cohort_id as StudentCohortID " +
                         "FROM cohorts " +
                         "LEFT JOIN students as s ON cohorts.id = s.cohort_id " +
-                        "LEFT JOIN instructors as i ON cohorts.id = i.cohort_id ";
+                        "LEFT JOIN instructors as i ON cohorts.id = i.cohort_id";
                     if (search != null)
-                        cmd.CommandText += $"WHERE cohorts.name LIKE '%{search}%'";
+                    {
+                        cmd.CommandText += " WHERE cohorts.name LIKE @search";
+                        cmd.Parameters.Add(new SqlParameter("@search", "%" + search + "%"));
+                    }
 
                     SqlDataReader reader = cmd.ExecuteReader();
 
@@ -100,6 +104,77 @@ namespace StudentExercises.Controllers
                     reader.Close();
 
                     return Ok(cohorts);
+                }
+            }
+        }
+
+        [HttpGet("{id})", Name = "GetCohort")]
+        public async Task<IActionResult> GetOneCohort([FromRoute]int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT id, name FROM cohorts WHERE id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    Cohort cohort = new Cohort();
+
+                    while (reader.Read())
+                    {
+                        cohort = new Cohort()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("id")),
+                            Name = reader.GetString(reader.GetOrdinal("name")),
+                        };
+                    }
+
+                    reader.Close();
+
+                    if (cohort == null)
+                    {
+                        return NotFound();
+                    }
+
+                    return Ok(cohort);
+                }
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> PostCohort([FromBody] Cohort cohort)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+
+                Regex dayRegex = new Regex(@"(?:day?)+ +\d{1,2}");
+                Regex eveningRegex = new Regex(@"(?:evening?)+ +\d{1,2}");
+
+                bool dayMatched = dayRegex.IsMatch(cohort.Name.ToLower());
+                bool eveningMatched = dayRegex.IsMatch(cohort.Name.ToLower());
+
+                if (dayMatched || eveningMatched)
+                {
+
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"INSERT INTO cohorts (name)
+                                        OUTPUT INSERTED.Id
+                                        VALUES (@name)";
+                        cmd.Parameters.Add(new SqlParameter("@name", cohort.Name));
+                        int newId = (int)cmd.ExecuteScalar();
+
+                        cohort.Id = newId;
+                        return CreatedAtRoute("GetCohort", new { id = newId }, cohort);
+                    }
+                }
+
+                else
+                {
+                    return BadRequest("Cohort name should be in the format of [Day|Evening] [number]");
                 }
             }
         }
